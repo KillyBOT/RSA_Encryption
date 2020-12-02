@@ -5,7 +5,7 @@
 
 #include "rsa.h"
 
-#define MSG_SIZE 256
+#define MSG_SIZE 2048
 
 int main(int argc, char **argv){
 

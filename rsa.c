@@ -140,7 +140,7 @@ int miller_rabin(mpz_t n, int k){
 rsa_key_t* rsa_make_keys(int bitlen){
 
 	rsa_key_t *kFinal;
-	int b1, b2;
+	int bp, bq;
 	mpz_t p, q, n, l, e, d;
 	gmp_randstate_t randState;
 
@@ -150,33 +150,37 @@ rsa_key_t* rsa_make_keys(int bitlen){
 
 	mpz_inits(p,q,n,l,e,d,NULL);
 
-	b1 = bitlen/2;
-	b2 = bitlen - bitlen/2;
+	bp = bitlen/2;
+	bq = bitlen - bitlen/2;
 
-	while((!mpz_fdiv_ui(p,2)) 
-		|| (!mpz_fdiv_ui(p,3)) 
+	while( (!mpz_fdiv_ui(p,3)) 
 		|| (!mpz_fdiv_ui(p,5)) 
 		|| (!mpz_fdiv_ui(p,7))
 		|| (!mpz_fdiv_ui(p,11))
 		|| (!mpz_fdiv_ui(p,13))
 		|| (!mpz_fdiv_ui(p,17))
 		|| (!mpz_fdiv_ui(p,19))
-		|| !miller_rabin(p,512)
-		|| (mpz_fdiv_ui(q,E_CONST) == 1)){
-		mpz_rrandomb(p,randState,b1);
+		|| !miller_rabin(p,1024)
+		|| (mpz_fdiv_ui(p,E_CONST) == 1)){
+		mpz_urandomb(p,randState,bp);
+		mpz_setbit(p,0);
+		mpz_setbit(p,bp-1);
+		mpz_setbit(p,bp-2);
 	}
 
-	while((!mpz_fdiv_ui(q,2)) 
-		|| (!mpz_fdiv_ui(q,3)) 
+	while( (!mpz_fdiv_ui(q,3)) 
 		|| (!mpz_fdiv_ui(q,5)) 
 		|| (!mpz_fdiv_ui(q,7))
 		|| (!mpz_fdiv_ui(q,11))
 		|| (!mpz_fdiv_ui(q,13))
 		|| (!mpz_fdiv_ui(q,17))
 		|| (!mpz_fdiv_ui(q,19))
-		|| !miller_rabin(q,512)
+		|| !miller_rabin(q,1024)
 		|| (mpz_fdiv_ui(q,E_CONST) == 1)){
-		mpz_rrandomb(q,randState,b2);
+		mpz_urandomb(q,randState,bq);
+		mpz_setbit(q,0);
+		mpz_setbit(q,bq-1);
+		mpz_setbit(q,bq-2);
 	}
 
 	//gmp_printf("p:\n%Zd\n\nq:\n%Zd\n",p,q);
