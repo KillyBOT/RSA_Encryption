@@ -6,6 +6,8 @@
 
 #include "rsa.h"
 
+#define E_CONST 65537
+
 void gcd(mpz_t rop, const mpz_t a, const mpz_t b){
 	if(!mpz_cmp_ui(b,0)){
 		mpz_set(rop,a);
@@ -159,9 +161,9 @@ rsa_key_t* rsa_make_keys(int bitlen){
 		|| (!mpz_fdiv_ui(p,13))
 		|| (!mpz_fdiv_ui(p,17))
 		|| (!mpz_fdiv_ui(p,19))
-		|| !miller_rabin(p,1024)
-		|| (mpz_fdiv_ui(q,65537) == 1)){
-		mpz_urandomb(p,randState,b1);
+		|| !miller_rabin(p,512)
+		|| (mpz_fdiv_ui(q,E_CONST) == 1)){
+		mpz_rrandomb(p,randState,b1);
 	}
 
 	while((!mpz_fdiv_ui(q,2)) 
@@ -172,9 +174,9 @@ rsa_key_t* rsa_make_keys(int bitlen){
 		|| (!mpz_fdiv_ui(q,13))
 		|| (!mpz_fdiv_ui(q,17))
 		|| (!mpz_fdiv_ui(q,19))
-		|| !miller_rabin(q,1024)
-		|| (mpz_fdiv_ui(q,65537) == 1)){
-		mpz_urandomb(q,randState,b2);
+		|| !miller_rabin(q,512)
+		|| (mpz_fdiv_ui(q,E_CONST) == 1)){
+		mpz_rrandomb(q,randState,b2);
 	}
 
 	//gmp_printf("p:\n%Zd\n\nq:\n%Zd\n",p,q);
@@ -189,7 +191,7 @@ rsa_key_t* rsa_make_keys(int bitlen){
 	mpz_add_ui(p,p,1);
 	mpz_add_ui(q,q,1);
 
-	mpz_init_set_ui(e, 65537);
+	mpz_init_set_ui(e, E_CONST);
 
 	modinv(d,e,l);
 
@@ -210,14 +212,14 @@ rsa_key_t* rsa_make_keys(int bitlen){
 }
 
 void print_public_key(rsa_key_t* key){
-	gmp_printf("Public key:\n%.2ZX\n",key->n);
+	gmp_printf("Public key:\n%ZX\n",key->n);
 }
 
 void print_private_key(rsa_key_t* key){
-	gmp_printf("Private key:\n%.2ZX\n",key->d);
+	gmp_printf("Private key:\n%ZX\n",key->d);
 }
 
-void block_encrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key){
+void block_encrypt(unsigned char* dest, unsigned char* str, size_t blockLen, rsa_key_t* key){
 	int strLen, byteLen;
 	mpz_t strNum;
 	srand(time(NULL));
@@ -229,21 +231,22 @@ void block_encrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key){
 
 	strncpy(dest,str,byteLen);
 	if(strLen != byteLen) {
-		for(int n = strLen; n < byteLen; n++) dest[n] = rand() % 256;
+		//for(int n = strLen; n < byteLen; n++) dest[n] = (rand() % 255) + 1;
+		for(int n = strLen; n < byteLen; n++) dest[n] = 0;
 	} 
 
 	mpz_import(strNum,byteLen,1,1,0,0,dest);
-	gmp_printf("%.2ZX\n",strNum);
+	gmp_printf("%ZX\n",strNum);
 
 	mpz_powm(strNum,strNum,key->e,key->n);
-	gmp_printf("%.2ZX\n",strNum);
+	gmp_printf("%ZX\n",strNum);
 
 	mpz_export(dest,NULL,1,1,0,0,strNum);
 
 	mpz_clear(strNum);
 
 }
-void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
+void block_decrypt(unsigned char* dest, unsigned char* str, size_t blockLen, rsa_key_t* key) {
 	int byteLen;
 	mpz_t strNum;
 
@@ -251,13 +254,11 @@ void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
 
 	byteLen = key->bitlen/8;
 
-	memcpy(dest,str,byteLen);
-
-	mpz_import(strNum,byteLen,1,1,0,0,dest);
-	gmp_printf("%.2ZX\n",strNum);
+	mpz_import(strNum,byteLen,1,1,0,0,str);
+	gmp_printf("%ZX\n",strNum);
 
 	mpz_powm(strNum,strNum,key->d,key->n);
-	gmp_printf("%.2ZX\n",strNum);
+	gmp_printf("%ZX\n",strNum);
 
 	mpz_export(dest,NULL,1,1,0,0,strNum);
 

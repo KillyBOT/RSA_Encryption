@@ -16,8 +16,8 @@ void modinv(mpz_t rop, const mpz_t aInit, const mpz_t mInit);
 rsa_key_t* rsa_make_keys(int bitlen);
 void print_public_key(rsa_key_t* key);
 void print_private_key(rsa_key_t* key);
-void block_encrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key);
-void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key);
+void block_encrypt(unsigned char* dest, unsigned char* str, size_t blockLen, rsa_key_t* key);
+void block_decrypt(unsigned char* dest, unsigned char* str, size_t blockLen, rsa_key_t* key);
 void free_key(rsa_key_t* key);
 
 #endif
