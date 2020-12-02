@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <gmp.h>
 #include <time.h>
 
@@ -192,14 +193,78 @@ rsa_key_t* rsa_make_keys(int bitlen){
 
 	modinv(d,e,l);
 
+	//dLen = mpz_sizeinbase(d,2);
+	//if(mpz_sizeinbase(d,2) < bitlen) mpz_mul_2exp(d,d,bitlen-dLen);
+
 	kFinal = malloc(sizeof(rsa_key_t));
 
 	mpz_init_set(kFinal->n,n);
 	mpz_init_set(kFinal->e,e);
 	mpz_init_set(kFinal->d,d);
+	kFinal->bitlen = bitlen;
 
 	gmp_randclear(randState);
 	mpz_clears(p,q,n,l,e,d,NULL);
 
 	return kFinal;
+}
+
+void print_public_key(rsa_key_t* key){
+	gmp_printf("Public key:\n%.2ZX\n",key->n);
+}
+
+void print_private_key(rsa_key_t* key){
+	gmp_printf("Private key:\n%.2ZX\n",key->d);
+}
+
+void block_encrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key){
+	int strLen, byteLen;
+	mpz_t strNum;
+	srand(time(NULL));
+
+	mpz_init(strNum);
+
+	strLen = strlen(str) + 1;
+	byteLen = key->bitlen/8;
+
+	strncpy(dest,str,byteLen);
+	if(strLen != byteLen) {
+		for(int n = strLen; n < byteLen; n++) dest[n] = rand() % 256;
+	} 
+
+	mpz_import(strNum,byteLen,1,1,0,0,dest);
+	gmp_printf("%.2ZX\n",strNum);
+
+	mpz_powm(strNum,strNum,key->e,key->n);
+	gmp_printf("%.2ZX\n",strNum);
+
+	mpz_export(dest,NULL,1,1,0,0,strNum);
+
+	mpz_clear(strNum);
+
+}
+void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
+	int byteLen;
+	mpz_t strNum;
+
+	mpz_init(strNum);
+
+	byteLen = key->bitlen/8;
+
+	memcpy(dest,str,byteLen);
+
+	mpz_import(strNum,byteLen,1,1,0,0,dest);
+	gmp_printf("%.2ZX\n",strNum);
+
+	mpz_powm(strNum,strNum,key->d,key->n);
+	gmp_printf("%.2ZX\n",strNum);
+
+	mpz_export(dest,NULL,1,1,0,0,strNum);
+
+	mpz_clear(strNum);
+}
+
+void free_key(rsa_key_t* key){
+	mpz_clears(key->n, key->e, key->d, NULL);
+	free(key);
 }
