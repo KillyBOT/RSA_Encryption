@@ -5,7 +5,7 @@
 
 #include "rsa.h"
 
-#define MSG_SIZE 2048
+#define MSG_SIZE 512
 
 int main(int argc, char **argv){
 
@@ -30,17 +30,17 @@ int main(int argc, char **argv){
 	print_private_key(key);
 	printf("\n");
 
-	block_encrypt(msgEncoded,msg,sizeof(msg),key);
+	block_encrypt(msgEncoded,msg,strlen(msg)+1,key);
 
-	for(int n = 0; n < MSG_SIZE/8; n++)printf("%.2X",(unsigned char)msgEncoded[n]);
+	for(int n = 0; n < MSG_SIZE/8; n++)printf("%2.2X",(unsigned char)msgEncoded[n]);
 	printf("\n\n");
 
-	block_decrypt(msgDecoded,msgEncoded,sizeof(msgEncoded),key);
+	block_decrypt(msgDecoded,msgEncoded,key);
 
-	for(int n = 0; n < MSG_SIZE/8; n++)printf("%.2X",(unsigned char)msgDecoded[n]);
+	for(int n = 0; n < MSG_SIZE/8; n++)printf("%2.2X",(unsigned char)msgDecoded[n]);
 	printf("\n\n");
 
-	printf("Decrypted: [%s]\n",msgDecoded);
+	//printf("Decrypted: [%s]\n",msgDecoded);
 
 	free_key(key);
 

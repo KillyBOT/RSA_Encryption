@@ -223,21 +223,38 @@ void print_private_key(rsa_key_t* key){
 	gmp_printf("Private key:\n%ZX\n",key->d);
 }
 
-void block_encrypt(unsigned char* dest, unsigned char* str, size_t blockLen, rsa_key_t* key){
+void block_encrypt(unsigned char* dest, unsigned char* str, size_t len, rsa_key_t* key){
 	int strLen, byteLen;
 	mpz_t strNum;
 	srand(time(NULL));
 
 	mpz_init(strNum);
 
-	strLen = strlen(str) + 1;
 	byteLen = key->bitlen/8;
 
-	strncpy(dest,str,byteLen);
+	//printf("%ld\t%d\n", len,byteLen);
+
+	if(byteLen-11 < len) return;
+
+	dest[0] = 0x00;
+	dest[1] = 0x02;
+
+	for(int n = 0; n < byteLen - len - 3; n++) dest[n+2] = (rand() % 255) + 1;
+
+	dest[byteLen - len-1] = 0x00;
+
+	for(int n = 0; n < len; n++){
+		dest[byteLen-len+n] = str[n];
+	}
+
+	for(int n = 0; n < byteLen; n++)printf("%2.2X",dest[n]);
+	printf("\n");
+
+	/*strncpy(dest,str,byteLen);
 	if(strLen != byteLen) {
-		//for(int n = strLen; n < byteLen; n++) dest[n] = (rand() % 255) + 1;
-		for(int n = strLen; n < byteLen; n++) dest[n] = 0;
-	} 
+		for(int n = strLen; n < byteLen; n++) dest[n] = (rand() % 255) + 1;
+		//for(int n = strLen; n < byteLen; n++) dest[n] = 0;
+	}*/
 
 	mpz_import(strNum,byteLen,1,1,0,0,dest);
 	gmp_printf("%ZX\n",strNum);
@@ -250,13 +267,17 @@ void block_encrypt(unsigned char* dest, unsigned char* str, size_t blockLen, rsa
 	mpz_clear(strNum);
 
 }
-void block_decrypt(unsigned char* dest, unsigned char* str, size_t blockLen, rsa_key_t* key) {
+void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
 	int byteLen;
 	mpz_t strNum;
+	unsigned char* d;
+	int p;
 
 	mpz_init(strNum);
 
 	byteLen = key->bitlen/8;
+	d = malloc(byteLen);
+	p = 0;
 
 	mpz_import(strNum,byteLen,1,1,0,0,str);
 	gmp_printf("%ZX\n",strNum);
@@ -264,9 +285,18 @@ void block_decrypt(unsigned char* dest, unsigned char* str, size_t blockLen, rsa
 	mpz_powm(strNum,strNum,key->d,key->n);
 	gmp_printf("%ZX\n",strNum);
 
-	mpz_export(dest,NULL,1,1,0,0,strNum);
+	mpz_export(d,NULL,1,1,0,0,strNum);
 
 	mpz_clear(strNum);
+
+	while (d[p] != 0x00) p++;
+	p++;
+
+	for(int n = 0; n < byteLen-p-1; n++){
+		dest[n] = d[p+n];
+	}
+
+	free(d);
 }
 
 void free_key(rsa_key_t* key){

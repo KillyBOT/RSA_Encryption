@@ -8,3 +8,6 @@ main.o: main.c rsa.h
 
 rsa.o: rsa.c rsa.h
 	$(CC) -c rsa.c -lm -lgmp
+
+run:
+	./RSA
