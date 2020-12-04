@@ -50,7 +50,7 @@ int main(int argc, char** argv){
 
 		readSize = fread(msgBlock,1,byteSize-11,msg);
 		if(readSize != byteSize-11) {
-			for(int n = readSize; n < byteSize-11; n++) msgBlock[n] = 0;
+			//for(int n = readSize; n < byteSize-11; n++) msgBlock[n] = 0;
 			running = 0;
 		}
 

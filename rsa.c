@@ -339,7 +339,7 @@ void block_encrypt(unsigned char* dest, unsigned char* str, size_t len, rsa_key_
 	//gmp_printf("%ZX\n",strNum);
 
 	mpz_powm(strNum,strNum,key->e,key->n);
-	//gmp_printf("%ZX\n",strNum);
+	//gmp_printf("%ZX\n\n",strNum);
 
 	mpz_export(dest,NULL,1,1,0,0,strNum);
 
@@ -358,10 +358,10 @@ void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
 	p = 0;
 
 	mpz_import(strNum,byteLen,1,1,0,0,str);
-	//gmp_printf("%ZX\n\n",strNum);
+	//gmp_printf("%ZX\n",strNum);
 
 	mpz_powm(strNum,strNum,key->d,key->n);
-	//gmp_printf("%ZX\n\n",strNum);
+	//gmp_printf("%ZX\n",strNum);
 	mpz_export(d,NULL,1,1,0,0,strNum);
 
 	mpz_clear(strNum);
@@ -369,9 +369,14 @@ void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
 	while (d[p] != 0x00) p++;
 	p++;
 
+	for(int n = 0; n < byteLen; n++) dest[n] = 0;
 	for(int n = 0; n < byteLen-p-1; n++){
 		dest[n] = d[p+n];
 	}
+	
+	//for(int n = 0; n < byteLen-p-1; n++)printf("%2.2X",(unsigned char)dest[n]);
+	//printf("\n\n");
+
 
 	free(d);
 }
