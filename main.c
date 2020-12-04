@@ -5,8 +5,6 @@
 
 #include "rsa.h"
 
-#define MSG_SIZE 512
-
 int main(int argc, char **argv){
 
 	rsa_key_t* key;

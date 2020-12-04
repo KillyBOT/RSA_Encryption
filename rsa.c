@@ -215,12 +215,91 @@ rsa_key_t* rsa_make_keys(int bitlen){
 	return kFinal;
 }
 
+void print_key_ned(rsa_key_t* key){
+	gmp_printf("n:\n%ZX\ne:\n%Zx\nd:\n%ZX\n",key->n,key->e,key->d);
+}
+
 void print_public_key(rsa_key_t* key){
 	gmp_printf("Public key:\n%ZX\n",key->n);
 }
 
 void print_private_key(rsa_key_t* key){
 	gmp_printf("Private key:\n%ZX\n",key->d);
+}
+
+void free_key(rsa_key_t* key){
+	mpz_clears(key->n, key->e, key->d, NULL);
+	free(key);
+}
+
+void rsa_save_key(rsa_key_t* key, char* filename){
+	char* public_key_name;
+	char* private_key_name;
+
+	FILE* public_file;
+	FILE* private_file;
+
+	public_key_name = malloc(512);
+	private_key_name = malloc(512);
+
+	strcpy(public_key_name, filename);
+	strcat(public_key_name, ".pub");
+	strcpy(private_key_name, filename);
+
+	public_file = fopen(public_key_name,"w+");
+	private_file = fopen(private_key_name,"w+");
+
+	mpz_out_str(public_file, 16, key->n);
+	mpz_out_str(public_file, 16, key->e);
+
+	mpz_out_str(private_file, 16, key->n);
+	mpz_out_str(private_file, 16, key->d);
+
+	fclose(public_file);
+	fclose(private_file);
+
+	free(public_key_name);
+	free(private_key_name);
+}
+
+void rsa_read_public_key(rsa_key_t* key, char* filename){
+
+	FILE* key_file;
+	char* n;
+
+	key_file = fopen(filename,"r");
+
+	n = malloc(MSG_SIZE / 4 + 1);
+
+	fgets(n,MSG_SIZE/4+1,key_file);
+
+	//printf("%s\n", n);
+
+	mpz_set_str(key->n, n, 16);
+	mpz_inp_str(key->e, key_file, 16);
+
+	fclose(key_file);
+	free(n);
+
+}
+
+void rsa_read_private_key(rsa_key_t* key, char* filename){
+
+	FILE* key_file;
+	unsigned char* n;
+
+	key_file = fopen(filename,"r");
+
+	n = malloc(MSG_SIZE/4 + 1);
+
+	fgets(n,MSG_SIZE/4 + 1,key_file);
+
+	mpz_set_str(key->n, n, 16);
+	mpz_inp_str(key->d, key_file, 16);
+
+	fclose(key_file);
+	free(n);
+
 }
 
 void block_encrypt(unsigned char* dest, unsigned char* str, size_t len, rsa_key_t* key){
@@ -247,8 +326,8 @@ void block_encrypt(unsigned char* dest, unsigned char* str, size_t len, rsa_key_
 		dest[byteLen-len+n] = str[n];
 	}
 
-	for(int n = 0; n < byteLen; n++)printf("%2.2X",dest[n]);
-	printf("\n");
+	//for(int n = 0; n < byteLen; n++)printf("%2.2X",dest[n]);
+	//printf("\n");
 
 	/*strncpy(dest,str,byteLen);
 	if(strLen != byteLen) {
@@ -257,15 +336,14 @@ void block_encrypt(unsigned char* dest, unsigned char* str, size_t len, rsa_key_
 	}*/
 
 	mpz_import(strNum,byteLen,1,1,0,0,dest);
-	gmp_printf("%ZX\n",strNum);
+	//gmp_printf("%ZX\n",strNum);
 
 	mpz_powm(strNum,strNum,key->e,key->n);
-	gmp_printf("%ZX\n",strNum);
+	//gmp_printf("%ZX\n",strNum);
 
 	mpz_export(dest,NULL,1,1,0,0,strNum);
 
 	mpz_clear(strNum);
-
 }
 void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
 	int byteLen;
@@ -280,11 +358,10 @@ void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
 	p = 0;
 
 	mpz_import(strNum,byteLen,1,1,0,0,str);
-	gmp_printf("%ZX\n",strNum);
+	//gmp_printf("%ZX\n\n",strNum);
 
 	mpz_powm(strNum,strNum,key->d,key->n);
-	gmp_printf("%ZX\n",strNum);
-
+	//gmp_printf("%ZX\n\n",strNum);
 	mpz_export(d,NULL,1,1,0,0,strNum);
 
 	mpz_clear(strNum);
@@ -297,9 +374,4 @@ void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
 	}
 
 	free(d);
-}
-
-void free_key(rsa_key_t* key){
-	mpz_clears(key->n, key->e, key->d, NULL);
-	free(key);
 }
