@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <gmp.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "rsa.h"
 
@@ -17,16 +19,16 @@ int main(int argc, char** argv){
 
 	rsa_key_t* key;
 
-	if(argc != 3){
+	/*if(argc != 3){
 		printf("Invalid use! Type ./rsa_encrypt [name of file to encrypt] [public key file]\n");
 		return 1;
-	}
+	}*/
 
 	key = malloc(sizeof(rsa_key_t));
 	key->bitlen = MSG_SIZE;
 	mpz_inits(key->n,key->e,key->d,NULL);
 
-	rsa_read_public_key(key,argv[2]);
+	rsa_read_public_key(key,argv[1]);
 	//print_key_ned(key);
 
 	//print_public_key(key);
@@ -36,8 +38,14 @@ int main(int argc, char** argv){
 	strcpy(msgEncodedFilename,argv[1]);
 	strcat(msgEncodedFilename,".rsa");
 
-	msg = fopen(argv[1],"r");
-	msgEncoded = fopen(msgEncodedFilename,"w+");
+	if(argc > 2){
+		msg = fopen(argv[2],"r");
+		msgEncoded = fopen(msgEncodedFilename,"w+");
+	} else {
+		msg = stdin;
+		msgEncoded = stdout;
+	}
+	
 
 	running = 1;
 	byteSize = MSG_SIZE / 8;
@@ -64,8 +72,10 @@ int main(int argc, char** argv){
 
 	}
 
-	fclose(msg);
-	fclose(msgEncoded);
+	if(argc > 2){
+		fclose(msg);
+		fclose(msgEncoded);
+	}
 
 	free_key(key);
 	free(msgEncodedFilename);

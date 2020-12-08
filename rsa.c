@@ -345,7 +345,7 @@ void block_encrypt(unsigned char* dest, unsigned char* str, size_t len, rsa_key_
 
 	mpz_clear(strNum);
 }
-void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
+void block_decrypt(unsigned char* dest, int* destLen, unsigned char* str, rsa_key_t* key) {
 	int byteLen;
 	mpz_t strNum;
 	unsigned char* d;
@@ -373,6 +373,8 @@ void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key) {
 	for(int n = 0; n < byteLen-p-1; n++){
 		dest[n] = d[p+n];
 	}
+
+	*destLen = byteLen-p-1;
 	
 	//for(int n = 0; n < byteLen-p-1; n++)printf("%2.2X",(unsigned char)dest[n]);
 	//printf("\n\n");

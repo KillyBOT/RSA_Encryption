@@ -25,3 +25,6 @@ rsa.o: rsa.c rsa.h
 
 run:
 	./RSA
+
+clean:
+	rm *.o

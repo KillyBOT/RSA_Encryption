@@ -26,6 +26,6 @@ void rsa_read_public_key(rsa_key_t* key, char* filename);
 void rsa_read_private_key(rsa_key_t* key, char* filename);
 
 void block_encrypt(unsigned char* dest, unsigned char* str, size_t len, rsa_key_t* key);
-void block_decrypt(unsigned char* dest, unsigned char* str, rsa_key_t* key);
+void block_decrypt(unsigned char* dest, int* destLen, unsigned char* str, rsa_key_t* key);
 
 #endif
