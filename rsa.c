@@ -137,6 +137,16 @@ int miller_rabin(mpz_t n, int k){
 	return 1;
 }
 
+int compare_hashes(unsigned char* h1, unsigned char* h2){
+	for(int x = 0; x < WORD_SIZE * HASH_SIZE; x++){
+		//printf("%02X %02X\n", hashToCheck[x], hashReal[x]);
+		if(h1[x] != h2[x]){
+			return 0;
+		}
+	}
+	return 1;
+}
+
 rsa_key_t* rsa_make_keys(int bitlen){
 
 	rsa_key_t *kFinal;
@@ -375,6 +385,75 @@ void block_decrypt(unsigned char* dest, int* destLen, unsigned char* str, rsa_ke
 	}
 
 	*destLen = byteLen-p-1;
+	
+	//for(int n = 0; n < byteLen-p-1; n++)printf("%2.2X",(unsigned char)dest[n]);
+	//printf("\n\n");
+
+
+	free(d);
+}
+
+void rsa_sign(unsigned char* dest, unsigned char* hash, rsa_key_t* key){
+	unsigned char digestPadding[19] = {0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20};
+
+	int byteLen;
+	mpz_t strNum;
+
+	byteLen = key->bitlen/8;
+
+	mpz_init(strNum);
+
+	dest[0] = 0x00;
+	dest[1] = 0x01;
+
+	for(int n = 0; n < byteLen - 54; n++) dest[n+2] = 0xFF;
+
+	dest[byteLen-53] = 0x00;
+
+	for(int n = 0; n < 19; n++) dest[byteLen-52+n] = digestPadding[n];
+	for(int n = 0; n < 32; n++) dest[byteLen-33+n] = hash[n];
+
+	mpz_import(strNum, byteLen,1,1,0,0,dest);
+	//gmp_printf("%ZX\n",strNum);
+
+	mpz_powm(strNum,strNum,key->d,key->n);
+	//gmp_printf("%ZX\n\n",strNum);
+
+	mpz_export(dest,NULL,1,1,0,0,strNum);
+
+	mpz_clear(strNum);
+
+}
+
+void rsa_verify(unsigned char* dest, unsigned char* src, int* errorFlag, rsa_key_t* key) {
+	int byteLen;
+	mpz_t strNum;
+	unsigned char* d;
+	int p;
+
+	mpz_init(strNum);
+
+	byteLen = key->bitlen/8;
+	d = malloc(byteLen);
+	p = 0;
+
+	mpz_import(strNum,byteLen,1,1,0,0,src);
+	//gmp_printf("%ZX\n",strNum);
+
+	mpz_powm(strNum,strNum,key->e,key->n);
+	//gmp_printf("%ZX\n",strNum);
+	mpz_export(d,NULL,1,1,0,0,strNum);
+
+	mpz_clear(strNum);
+
+	while (p < byteLen - 1 && d[p] != 0x20) p++;
+	p++;
+
+	if(p != 478) *errorFlag = 1;
+
+	for(int n = 0; n < WORD_SIZE * HASH_SIZE; n++){
+		dest[n] = d[p+n];
+	}
 	
 	//for(int n = 0; n < byteLen-p-1; n++)printf("%2.2X",(unsigned char)dest[n]);
 	//printf("\n\n");
